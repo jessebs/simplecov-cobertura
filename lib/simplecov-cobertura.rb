@@ -160,7 +160,7 @@ module SimpleCov
         end
 
         def extract_rate(percent)
-          (percent / 100).round(2).to_s
+          (percent / 100).round(4).to_s
         end
 
         def project_root
