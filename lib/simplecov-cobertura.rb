@@ -1,3 +1,4 @@
+require 'stringio'
 require 'rexml/document'
 require 'rexml/element'
 require 'pathname'
