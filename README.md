@@ -37,8 +37,7 @@ SimpleCov.formatter = SimpleCov::Formatter::CoberturaFormatter
 
 Tested in a CI environment against the following Ruby versions:
 
-* 3.0 - 3.4
-* 2.5 - 2.7
+* 3.1 - 4.0
 
 ## Contributing
 

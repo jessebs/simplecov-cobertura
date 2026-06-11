@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
   spec.description = 'Produces Cobertura XML formatted output from SimpleCov'
   spec.homepage = 'https://github.com/jessebs/simplecov-cobertura'
   spec.license = 'Apache-2.0'
-  spec.required_ruby_version = '>= 2.5.0'
+  spec.required_ruby_version = '>= 3.1'
 
   spec.files = `git ls-files -z`.split("\x0")
   spec.executables = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
@@ -24,6 +24,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'nokogiri', '~> 1.0'
   spec.add_development_dependency 'rake', '~> 13.0'
 
-  spec.add_dependency 'simplecov', '~> 0.19'
+  spec.add_dependency 'simplecov', '>= 1.0.0.rc2', '< 2.0'
   spec.add_dependency 'rexml'
 end
