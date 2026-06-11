@@ -1,4 +1,6 @@
 require 'test/unit'
+require 'fileutils'
+require 'tmpdir'
 require 'nokogiri'
 require 'open-uri'
 require 'simplecov'
@@ -6,8 +8,9 @@ require 'simplecov-cobertura'
 
 class CoberturaFormatterTest < Test::Unit::TestCase
   def setup
+    @tmpdir = Dir.mktmpdir('simplecov-cobertura-test')
     SimpleCov.enable_coverage :branch
-    SimpleCov.coverage_dir "tmp"
+    SimpleCov.coverage_dir @tmpdir
     @no_filter = SimpleCov::Result::FilterConfig.new(filters: [], cover_filters: [], groups: {})
     @result = SimpleCov::Result.new({
                                       "#{__FILE__}" => {
@@ -33,6 +36,7 @@ class CoberturaFormatterTest < Test::Unit::TestCase
 
   def teardown
     SimpleCov.groups.clear
+    FileUtils.remove_entry(@tmpdir) if @tmpdir && Dir.exist?(@tmpdir)
   end
 
   def test_format_save_file
@@ -182,9 +186,9 @@ class CoberturaFormatterTest < Test::Unit::TestCase
 
   def test_supports_root_project_path
     old_root = SimpleCov.root
-    SimpleCov.root("/tmp")
-    expected_base = old_root[1..-1] # Remove leading "/"
-
+    @alt_root = Dir.mktmpdir('simplecov-cobertura-root')
+    SimpleCov.root(@alt_root)
+    expected_prefix = Pathname.new(old_root).relative_path_from(Pathname.new(@alt_root)).to_s
     result = SimpleCov::Result.new(@result.original_result, filter_config: @no_filter)
     xml = @formatter.format(result)
     doc = Nokogiri::XML::Document.parse(xml)
@@ -192,10 +196,11 @@ class CoberturaFormatterTest < Test::Unit::TestCase
     classes = doc.xpath '/coverage/packages/package/classes/class'
     assert_equal 1, classes.length
     clazz = classes.first
-    assert_equal "../#{expected_base}/test/simplecov-cobertura_test.rb", clazz.attribute('name').value
-    assert_equal "../#{expected_base}/test/simplecov-cobertura_test.rb", clazz.attribute('filename').value
+    assert_equal "#{expected_prefix}/test/simplecov-cobertura_test.rb", clazz.attribute('name').value
+    assert_equal "#{expected_prefix}/test/simplecov-cobertura_test.rb", clazz.attribute('filename').value
   ensure
     SimpleCov.root(old_root)
+    FileUtils.remove_entry(@alt_root) if @alt_root && Dir.exist?(@alt_root)
   end
 
   def test_condition_start_line_handles_both_key_forms
