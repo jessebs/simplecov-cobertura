@@ -8,6 +8,7 @@ class CoberturaFormatterTest < Test::Unit::TestCase
   def setup
     SimpleCov.enable_coverage :branch
     SimpleCov.coverage_dir "tmp"
+    @no_filter = SimpleCov::Result::FilterConfig.new(filters: [], cover_filters: [], groups: {})
     @result = SimpleCov::Result.new({
                                       "#{__FILE__}" => {
                                         "lines" => [1, 1, 1, nil, 1, nil, 1, 0, nil, 1, nil, nil, nil],
@@ -26,7 +27,7 @@ class CoberturaFormatterTest < Test::Unit::TestCase
                                             { [:then, 16, 15, 6, 15, 20] => 0, [:else, 17, 15, 23, 15, 25] => 0 }
                                         }
                                       }
-                                    })
+                                    }, filter_config: @no_filter)
     @formatter = SimpleCov::Formatter::CoberturaFormatter.new
   end
 
@@ -128,9 +129,11 @@ class CoberturaFormatterTest < Test::Unit::TestCase
   end
 
   def test_groups
-    SimpleCov.add_group('test_group', 'test/')
+    SimpleCov.group('test_group', 'test/')
+    group_filter = SimpleCov::Result::FilterConfig.new(filters: [], cover_filters: [], groups: SimpleCov.groups)
+    result = SimpleCov::Result.new(@result.original_result, filter_config: group_filter)
 
-    xml = @formatter.format(@result)
+    xml = @formatter.format(result)
     doc = Nokogiri::XML::Document.parse(xml)
 
     coverage = doc.xpath '/coverage'
@@ -182,7 +185,8 @@ class CoberturaFormatterTest < Test::Unit::TestCase
     SimpleCov.root("/tmp")
     expected_base = old_root[1..-1] # Remove leading "/"
 
-    xml = @formatter.format(@result)
+    result = SimpleCov::Result.new(@result.original_result, filter_config: @no_filter)
+    xml = @formatter.format(result)
     doc = Nokogiri::XML::Document.parse(xml)
 
     classes = doc.xpath '/coverage/packages/package/classes/class'
