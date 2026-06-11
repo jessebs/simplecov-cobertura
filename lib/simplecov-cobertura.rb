@@ -151,18 +151,6 @@ module SimpleCov
       end
 
       def build_branches_by_line(file, branches_by_line)
-        if file.branches.first.respond_to?(:condition_start_line)
-          file.branches.reject(&:skipped?).each do |branch|
-            info = branches_by_line[branch.condition_start_line] ||= { total: 0, covered: 0 }
-            info[:total] += 1
-            info[:covered] += 1 if branch.covered?
-          end
-        else
-          build_branches_by_line_from_raw_data(file, branches_by_line) # the code above
-        end
-      end
-
-      def build_branches_by_line_from_raw_data(file, branches_by_line)
         file.coverage_data.fetch("branches", {}).each do |condition, branches|
           line = condition_start_line(condition)
           next unless line

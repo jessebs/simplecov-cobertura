@@ -1,4 +1,5 @@
 require_relative 'simplecov_setup'
+
 class SampleTest < Test::Unit::TestCase
   def test_greet_with_name
     assert_equal "Hello, World!", Sample.new.greet("World")
