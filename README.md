@@ -1,10 +1,12 @@
-# simplecov-cobertura 
+# simplecov-cobertura
+
 [![Build](https://github.com/jessebs/simplecov-cobertura/actions/workflows/build.yml/badge.svg)](https://github.com/jessebs/simplecov-cobertura/actions/workflows/build.yml)   [![Gem Version](https://badge.fury.io/rb/simplecov-cobertura.svg)](http://badge.fury.io/rb/simplecov-cobertura)
 
+Produces [Cobertura](http://cobertura.sourceforge.net/) formatted XML
+from [SimpleCov](https://github.com/colszowka/simplecov).
 
-Produces [Cobertura](http://cobertura.sourceforge.net/) formatted XML from [SimpleCov](https://github.com/colszowka/simplecov).
-
-Output can be consumed by the [Jenkins Cobertura Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Cobertura+Plugin) for easy 
+Output can be consumed by the [Jenkins Cobertura Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Cobertura+Plugin)
+for easy
 coverage visualization.
 
 ## Installation
@@ -32,7 +34,9 @@ SimpleCov.formatter = SimpleCov::Formatter::CoberturaFormatter
 ```
 
 ## Continuous Integration
+
 Tested in a CI environment against the following Ruby versions:
+
 * 3.0 - 3.4
 * 2.5 - 2.7
 
@@ -45,6 +49,7 @@ Tested in a CI environment against the following Ruby versions:
 5. Create a new Pull Request
 
 ## License
+
 Copyright 2025 Jesse Bowes
 
 Licensed under the Apache License, Version 2.0 (the "License");
