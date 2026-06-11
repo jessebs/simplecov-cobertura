@@ -73,12 +73,7 @@ module SimpleCov
 
               branches_by_line = {}
               if SimpleCov.branch_coverage?
-                file.branches.each do |branch|
-                  line_no = branch.start_line
-                  branches_by_line[line_no] ||= { total: 0, covered: 0 }
-                  branches_by_line[line_no][:total] += 1
-                  branches_by_line[line_no][:covered] += 1 if branch.covered?
-                end
+                build_branches_by_line(file, branches_by_line)
               end
 
               file.lines.each do |file_line|
@@ -143,7 +138,7 @@ module SimpleCov
         end
 
         def set_branch_attributes(line, file_line, branches_by_line)
-          branch_info = branches_by_line[file_line.number]
+          branch_info = branches_by_line[file_line.line_number]
           if branch_info
             total = branch_info[:total]
             covered = branch_info[:covered]
@@ -153,6 +148,28 @@ module SimpleCov
           else
             line.attributes['branch'] = 'false'
           end
+        end
+
+        def build_branches_by_line(file, branches_by_line)
+          coverage_branch_data = file.coverage_data.fetch("branches", {})
+          coverage_branch_data.each do |condition, coverage_branches|
+            condition = restore_coverage_data(condition)
+            _type, _id, condition_start_line, * = condition
+            branches_by_line[condition_start_line] ||= { total: 0, covered: 0 }
+            coverage_branches.each do |_branch_data, hit_count|
+              branches_by_line[condition_start_line][:total] += 1
+              branches_by_line[condition_start_line][:covered] += 1 if hit_count.positive?
+            end
+          end
+        end
+
+        def restore_coverage_data(data)
+          return data if data.is_a?(Array)
+
+          # Coverage data loaded from JSON has array keys as strings
+          # rubocop:disable Security/Eval
+          eval data
+          # rubocop:enable Security/Eval
         end
 
       # Roughly mirrors private method SimpleCov::Formatter::HTMLFormatter#output_coverage

@@ -110,20 +110,21 @@ class CoberturaFormatterTest < Test::Unit::TestCase
     assert_equal '1', first_line.attribute('hits').value
     last_line = lines.last
     assert_equal '10', last_line.attribute('number').value
-    assert_equal 'true', last_line.attribute('branch').value
+    assert_equal 'false', last_line.attribute('branch').value
     assert_equal '1', last_line.attribute('hits').value
 
-    # Verify condition-coverage accurately reflects branch counts per line
+    # Verify condition-coverage accurately reflects branch counts per condition line
     branched_lines = lines.select { |l| l.attribute('branch').value == 'true' }
     condition_coverages = branched_lines.map { |l| [l.attribute('number').value, l.attribute('condition-coverage').value] }
-    # Line 3: 2 branches (then=>0, else=>1) => 50% (1/2)
+    # Line 3: condition [:if, 0, 3, ...] with 2 branches (then=>0, else=>1) => 50% (1/2)
     assert_include condition_coverages, ['3', '50% (1/2)']
-    # Line 5: 2 branches (then=>1, else=>0) => 50% (1/2)
+    # Line 5: condition [:if, 3, 5, ...] with 2 branches (then=>1, else=>0) => 50% (1/2)
     assert_include condition_coverages, ['5', '50% (1/2)']
-    # Line 8: 1 branch (then=>0) => 0% (0/1)
-    assert_include condition_coverages, ['8', '0% (0/1)']
-    # Line 10: 1 branch (else=>1) => 100% (1/1)
-    assert_include condition_coverages, ['10', '100% (1/1)']
+    # Line 7: condition [:if, 6, 7, ...] with 2 branches (then=>0, else=>1) => 50% (1/2)
+    assert_include condition_coverages, ['7', '50% (1/2)']
+    # Lines 12, 13, 15 have nil line coverage so they don't get <line> elements,
+    # but their conditions are still correctly grouped by condition start line.
+    assert_equal 3, branched_lines.length
   end
 
   def test_groups
@@ -172,7 +173,7 @@ class CoberturaFormatterTest < Test::Unit::TestCase
     assert_equal '1', first_line.attribute('hits').value
     last_line = lines.last
     assert_equal '10', last_line.attribute('number').value
-    assert_equal 'true', last_line.attribute('branch').value
+    assert_equal 'false', last_line.attribute('branch').value
     assert_equal '1', last_line.attribute('hits').value
   end
 
