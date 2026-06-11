@@ -1,20 +1,4 @@
-$LOAD_PATH.unshift(File.join(ENV.fetch('GEM_ROOT'), 'lib'))
-
-require 'simplecov'
-require 'simplecov-cobertura'
-
-SimpleCov.command_name 'Unit Tests'
-SimpleCov.start do
-  enable_coverage :branch
-  root ENV.fetch('PROJECT_ROOT')
-  coverage_dir 'coverage'
-  formatter SimpleCov::Formatter::CoberturaFormatter
-end
-
-require File.join(ENV.fetch('PROJECT_ROOT'), 'lib', 'sample')
-
-require 'test/unit'
-
+require_relative 'simplecov_setup'
 class SampleTest < Test::Unit::TestCase
   def test_greet_with_name
     assert_equal "Hello, World!", Sample.new.greet("World")

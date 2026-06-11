@@ -123,17 +123,53 @@ class IntegrationTest < Test::Unit::TestCase
     assert_equal '0% (0/2)', condition_coverages[22], "unused_method condition-coverage mismatch"
   end
 
+  def test_merged_results_exercise_string_condition_keys
+    install_fixture('sample')
+
+    stdout, stderr, status = run_fixture_test('test/test_merged_a.rb',
+                                              'COMMAND_NAME' => 'Run A')
+    assert status.success?, "Run A failed.\nstdout: #{stdout}\nstderr: #{stderr}"
+
+    # Tripwire: confirm the stored resultset actually contains stringified
+    # condition keys. If a future simplecov changes its serialization, this
+    # assertion fails and tells you this test no longer covers the string path.
+    resultset = File.read(File.join(@tmpdir, 'coverage', '.resultset.json'))
+    assert_match(/\[:if, \d+, \d+/, resultset,
+                 'Expected stringified branch condition keys in .resultset.json')
+
+    stdout, stderr, status = run_fixture_test('test/test_merged_b.rb',
+                                              'COMMAND_NAME' => 'Run B')
+    assert status.success?, "Run B failed.\nstdout: #{stdout}\nstderr: #{stderr}"
+
+    doc = Nokogiri::XML(File.read(File.join(@tmpdir, 'coverage', 'coverage.xml'))) { |c| c.strict }
+    sample_class = doc.xpath('//class').find { |c| c['filename'].include?('sample.rb') }
+    assert_not_nil sample_class
+
+    cc = sample_class.xpath('.//line[@branch="true"]')
+                     .map { |l| [l['number'].to_i, l['condition-coverage']] }
+                     .to_h
+
+    # greet (line 3): else in Run A + then in Run B => merged 2/2.
+    # Proves string keys were parsed AND hit counts summed across runs.
+    assert_equal '100% (2/2)', cc[3], 'greet should be fully covered after merge'
+    # absolute (line 11): only Run A touched it => still 1/2.
+    assert_equal '50% (1/2)', cc[11]
+    # unused_method (line 22): never called in either run => 0/2.
+    assert_equal '0% (0/2)', cc[22]
+  end
+
   private
 
   def install_fixture(name)
     FileUtils.cp_r(File.join(FIXTURES_DIR, name, '.'), @tmpdir)
   end
 
-  def run_fixture_test(test_path)
+  def run_fixture_test(test_path, extra_env = {})
     Open3.capture3(
-      { 'GEM_ROOT' => GEM_ROOT, 'PROJECT_ROOT' => @tmpdir },
+      { 'GEM_ROOT' => GEM_ROOT, 'PROJECT_ROOT' => @tmpdir }.merge(extra_env),
       'ruby', File.join(@tmpdir, test_path),
       chdir: @tmpdir
     )
   end
+
 end

@@ -193,4 +193,12 @@ class CoberturaFormatterTest < Test::Unit::TestCase
   ensure
     SimpleCov.root(old_root)
   end
+
+  def test_condition_start_line_handles_both_key_forms
+    formatter = SimpleCov::Formatter::CoberturaFormatter.new
+    assert_equal 3, formatter.send(:condition_start_line, [:if, 0, 3, 4, 5, 10])
+    assert_equal 3, formatter.send(:condition_start_line, '[:if, 0, 3, 4, 5, 10]')
+    assert_equal 7, formatter.send(:condition_start_line, '[:case, 12, 7, 0, 9, 3]')
+    assert_nil formatter.send(:condition_start_line, 42)
+  end
 end
