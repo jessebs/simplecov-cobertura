@@ -208,6 +208,66 @@ class CoberturaFormatterTest < Test::Unit::TestCase
     assert_equal 3, formatter.send(:condition_start_line, [:if, 0, 3, 4, 5, 10])
     assert_equal 3, formatter.send(:condition_start_line, '[:if, 0, 3, 4, 5, 10]')
     assert_equal 7, formatter.send(:condition_start_line, '[:case, 12, 7, 0, 9, 3]')
+    assert_equal(-3, formatter.send(:condition_start_line, '[:if, 0, -3, 4, 5, 10]'))
+    assert_nil formatter.send(:condition_start_line, '[:if]')
     assert_nil formatter.send(:condition_start_line, 42)
+  end
+
+  def test_special_characters_are_escaped
+    SimpleCov.group('lib & "core" <x>', 'test/')
+    group_filter = SimpleCov::Result::FilterConfig.new(filters: [], cover_filters: [], groups: SimpleCov.groups)
+    result = SimpleCov::Result.new(@result.original_result, filter_config: group_filter)
+
+    xml = @formatter.format(result)
+    assert_include xml, 'name="lib &amp; &quot;core&quot; &lt;x&gt;"'
+
+    doc = Nokogiri::XML::Document.parse(xml) { |config| config.strict }
+    assert_empty doc.errors
+    assert_equal 'lib & "core" <x>', doc.at_xpath('/coverage/packages/package').attribute('name').value
+  end
+
+  def test_file_without_covered_or_missed_lines
+    original = @result.original_result.merge(
+      File.expand_path('../lib/simplecov-cobertura.rb', __dir__) => {'lines' => [nil, nil, nil], 'branches' => {}}
+    )
+    xml = @formatter.format(SimpleCov::Result.new(original, filter_config: @no_filter))
+
+    doc = Nokogiri::XML::Document.parse(xml) { |config| config.strict }
+    assert_empty doc.errors
+    empty_class = doc.xpath('/coverage/packages/package/classes/class').find do |klass|
+      klass.attribute('filename').value.include?('lib/simplecov-cobertura.rb')
+    end
+    assert_not_nil empty_class
+    assert_empty empty_class.xpath('.//line')
+    assert_include xml, '<lines/>'
+  end
+
+  def test_result_without_files
+    xml = @formatter.format(SimpleCov::Result.new({}, filter_config: @no_filter))
+
+    doc = Nokogiri::XML::Document.parse(xml) { |config| config.strict }
+    assert_empty doc.errors
+    assert_empty doc.xpath('/coverage/packages/package')
+    assert_include xml, '<packages/>'
+  end
+
+  # REXML's pretty printer used to split a source path longer than its 80
+  # column page width across lines, leaving whitespace around the text node.
+  def test_long_root_path_is_written_on_one_line
+    old_root = SimpleCov.root
+    @alt_root = File.join(Dir.mktmpdir('simplecov-cobertura-root'), 'a' * 40, 'b' * 40)
+    FileUtils.mkdir_p(@alt_root)
+    SimpleCov.root(@alt_root)
+    result = SimpleCov::Result.new(@result.original_result, filter_config: @no_filter)
+
+    xml = @formatter.format(result)
+    assert_include xml, "<source>#{@alt_root}</source>"
+
+    doc = Nokogiri::XML::Document.parse(xml) { |config| config.strict }
+    assert_empty doc.errors
+    assert_equal @alt_root, doc.at_xpath('/coverage/sources/source').text
+  ensure
+    SimpleCov.root(old_root)
+    FileUtils.remove_entry(@alt_root) if @alt_root && Dir.exist?(@alt_root)
   end
 end
